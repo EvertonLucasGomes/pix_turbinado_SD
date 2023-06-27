@@ -27,7 +27,7 @@ def threaded_recebimento_dados_cliente(socket):
     socket.close()
 
 if __name__ == "__main__":
-    print('Servidor iniciado.')
+    print('Servidor DNS iniciado.')
     while True:
         # Espera por conexões de clientes
         socket_cliente, endereco_cliente = socket_consumidor.accept()
