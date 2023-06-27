@@ -20,10 +20,15 @@ def realizar_autenticacao(mensagem, socket_edge):
     senha = mensagem['mensagem'].split('|')[1].lstrip('0')
     
     if db.autenticar_usuario(login, senha):
-        print('Usuário autenticado com sucesso.')
+        mensagem['autenticado'] = 1
+        mensagem['mensagem'] =  f"{login}|0000000000"
+    
+    print(len(json.dumps(mensagem).encode()))    
+    #retornando a mensagem para o cliente
+    socket_edge.sendall(json.dumps(mensagem).encode())
 
 def threaded_recebimento_do_balancer(socket_edge):
-    mensagem = socket_edge.recv(64).decode()
+    mensagem = socket_edge.recv(62).decode()
     mensagem = json.loads(mensagem)
     
     if mensagem['funcao'] == 7:

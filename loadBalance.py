@@ -22,8 +22,6 @@ def threaded_direcionar_cliente(socket_cliente, sever):
     mensagem = socket_cliente.recv(64).decode()
     
     if mensagem:
-        print(mensagem)
-
         #obtendo edge direcionado
         host_edge = host_edge_computing_server_1 if sever == 0 else host_edge_computing_server_2
         port_edge = port_edge_computing_server_1 if sever == 0 else port_edge_computing_server_2
@@ -35,8 +33,8 @@ def threaded_direcionar_cliente(socket_cliente, sever):
         #enviando mensagem para o servidor edge
         socket_edge_computing.sendall(mensagem.encode())
         
-        # mensagem_servidor = socket_edge_computing.recv(51).decode()
-        # socket_cliente.sendall(mensagem_servidor.encode())
+        mensagem_servidor = socket_edge_computing.recv(62).decode()
+        socket_cliente.sendall(mensagem_servidor.encode())
         
         # mensagem = socket_cliente.recv(51).decode()
         # socket_edge_computing.sendall(mensagem.encode())

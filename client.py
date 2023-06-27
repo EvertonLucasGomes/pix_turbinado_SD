@@ -44,8 +44,10 @@ if len(mensagem_dns) == 2:
     #enviando mensagem para o servidor edge
     socket_balancer.sendall(mensagem.encode())
         
-    mensagem_servidor = socket_balancer.recv(51).decode()
-    print(mensagem_servidor)
+    resposta_login = socket_balancer.recv(62).decode()
+    protocolo_de_envio = json.loads(resposta_login)
+    
+    print(protocolo_de_envio)
     
     socket_balancer.close()
     

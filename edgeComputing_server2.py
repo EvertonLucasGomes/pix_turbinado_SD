@@ -16,15 +16,16 @@ socket_edge.bind((Host, Port))
 socket_edge.listen()
 
 def threaded_recebimento_do_balancer(socket_balancer):
-    mensagem = socket_balancer.recv(64).decode()
+    mensagem = socket_balancer.recv(62).decode()
     
     if edge_helpers.executar_verificações(mensagem):
         socket_servidor= socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         socket_servidor.connect((host_servidor, port_servidor))
         socket_servidor.sendall(mensagem.encode())
         
-        # mensagem_servidor = socket_servidor.recv(51).decode()
-        # socket_balancer.sendall(mensagem_servidor.encode())
+        mensagem_servidor = socket_servidor.recv(62).decode()
+        socket_balancer.sendall(mensagem_servidor.encode())
+
         
         
         # mensagem = socket_balancer.recv(51).decode()
