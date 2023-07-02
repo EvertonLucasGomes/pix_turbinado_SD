@@ -47,11 +47,41 @@ if len(mensagem_dns) == 2:
     resposta_login = socket_balancer.recv(62).decode()
     protocolo_de_envio = json.loads(resposta_login)
     
-    print(protocolo_de_envio)
-    
     socket_balancer.close()
     
-    
+    if protocolo_de_envio["autenticado"] == 1:
+        
+        while True:
+            socket_balancer = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            socket_balancer.connect((host_load_balancer, int(port_load_balancer)))
+        
+            #enviar request
+            mensagem_request = f"{login.zfill(4)}|0000|00000"
+            protocolo_de_envio["funcao"] = 1
+            protocolo_de_envio["mensagem"] = mensagem_request
+            socket_balancer.sendall(json.dumps(protocolo_de_envio).encode())
+            #recebe grant
+            resposta_grant = socket_balancer.recv(62).decode()
+            resposta_grant = json.loads(resposta_grant)
+            print("GRANT RECEBIDO ")
+            print(resposta_grant)
+            #envia deposito
+            mensagem_operation = f"{login.zfill(4)}|0000|00000"
+            protocolo_de_envio["funcao"] = 3
+            protocolo_de_envio["mensagem"] = mensagem_operation
+            socket_balancer.sendall(json.dumps(protocolo_de_envio).encode())
+            #recebe resposta
+            resposta_operation = socket_balancer.recv(62).decode()
+            resposta_operation = json.loads(resposta_operation)
+            print("RESPOSTA DA OPERAÇÃO ")
+            print(resposta_operation)
+            #envia release
+            mensagem_release = f"{login.zfill(4)}|0000000000"
+            protocolo_de_envio["funcao"] = 5
+            protocolo_de_envio["mensagem"] = mensagem_release
+            socket_balancer.sendall(json.dumps(protocolo_de_envio).encode())
+            
+            socket_balancer.close()
         
     # time.sleep(2)
     

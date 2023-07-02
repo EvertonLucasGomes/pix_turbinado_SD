@@ -12,10 +12,7 @@ socket_servidor = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 socket_servidor.bind((Host, Port))
 socket_servidor.listen()
 
-def realizar_autenticacao(mensagem, socket_edge):
-    #instanciando o repositório
-    db = repository.Db("bank_database.db")
-    
+def realizar_autenticacao(mensagem, socket_edge, db):
     login = mensagem['mensagem'].split('|')[0]
     senha = mensagem['mensagem'].split('|')[1].lstrip('0')
     
@@ -27,17 +24,54 @@ def realizar_autenticacao(mensagem, socket_edge):
     #retornando a mensagem para o cliente
     socket_edge.sendall(json.dumps(mensagem).encode())
 
-def threaded_recebimento_do_balancer(socket_edge):
+def realizar_request(mensagem, socket_edge, db):
+    #recebe request
+    print(mensagem)
+    protocolo = mensagem
+    usuario = protocolo['mensagem'].split('|')[0]
+    
+    #envia grant
+    mensagem_grant = f"{usuario.zfill(4)}|0000000000"
+    protocolo["funcao"] = 2
+    protocolo["mensagem"] = mensagem_grant
+    socket_edge.sendall(json.dumps(protocolo).encode())
+    
+    #recebe operation
+    resposta_operation = socket_edge.recv(62).decode()
+    protocolo = json.loads(resposta_operation)
+    print("RECEBENDO OPERATION " )
+    print(protocolo)
+    
+    #realiza operation
+    
+    #envia respota
+    resposta_operation = f"{usuario.zfill(4)}|0000000000"
+    protocolo["funcao"] = 4
+    protocolo["mensagem"] = resposta_operation
+    socket_edge.sendall(json.dumps(protocolo).encode())
+    
+    #recebe release
+    resposta_release = socket_edge.recv(62).decode()
+    resposta_release = json.loads(resposta_release)
+    print("RESPOSTA DO RELEASE ")
+    print(resposta_release)
+    
+def realizar_deposito(db):
+    pass
+
+def threaded_recebimento_do_edge(socket_edge):
+    #instanciando o repositório
+    db = repository.Db("bank_database.db")
+    
     mensagem = socket_edge.recv(62).decode()
     mensagem = json.loads(mensagem)
     
     if mensagem['funcao'] == 7:
-        realizar_autenticacao(mensagem, socket_edge)
-    
-    #socket_edge.sendall("chegou".encode())
-    
-    # mensagem = socket_edge.recv(51).decode()
-    # print (mensagem)
+        realizar_autenticacao(mensagem, socket_edge, db)
+        
+    elif mensagem['funcao'] == 1:
+        realizar_request(mensagem, socket_edge, db)
+        
     socket_edge.close()
 
 if __name__ == "__main__":
@@ -48,5 +82,5 @@ if __name__ == "__main__":
         print(f'{endereco_cliente[0]}:{endereco_cliente[1]} conectou.')
 
         # Cria uma nova thread para lidar com o cliente
-        thread_cliente = threading.Thread(target=threaded_recebimento_do_balancer, args=([socket_cliente]))
+        thread_cliente = threading.Thread(target=threaded_recebimento_do_edge, args=([socket_cliente]))
         thread_cliente.start()

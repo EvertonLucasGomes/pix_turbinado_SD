@@ -34,10 +34,13 @@ class Db:
 
         self.conn.close()
 
-        if user:
-            return True
-        else:
-            return False
+        return True if user else False
+        
+    def verificar_conta_existe(self, numero_conta):
+        self.cursor.execute("SELECT * FROM conta WHERE numero=?", (numero_conta,))
+        conta = self.cursor.fetchone()
+        
+        return True if conta else False
         
     def close(self):
         self.conn.close()
