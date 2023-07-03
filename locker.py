@@ -1,21 +1,18 @@
 class LockerMult:
-    def __init__(self, size):
-        self.last_to_enter = [-1] * size
-        self.level         = [-1] * size
-        self.N             = size
+    def __init__(self, tamanho):
+        self.ultimo_a_entrar = [-1] * tamanho
+        self.nivel = [-1] * tamanho
+        self.N = tamanho
   
-    def acquire(self, PID):    
+    def adquirir(self, PID):
         for i in range(0, self.N):
-            #print("locking ", PID, i, self.last_to_enter[i], max(self.level[:PID]+self.level[PID+1:]))
-            self.level[PID] = i
-            self.last_to_enter[i] = PID
-            while self.last_to_enter[i] == PID \
-                and max(self.level[:PID]+self.level[PID+1:]) >= i:
+            self.nivel[PID] = i
+            self.ultimo_a_entrar[i] = PID
+            while self.ultimo_a_entrar[i] == PID and max(self.nivel[:PID] + self.nivel[PID+1:]) >= i:
                 continue
-        #print("locker out", PID)
     
-    def release(self, PID):
-        self.level[PID] = -1 
+    def liberar(self, PID):
+        self.nivel[PID] = -1 
     
-    def get_queue(self):
-        return self.level
+    def obter_fila(self):
+        return self.nivel

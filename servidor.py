@@ -4,6 +4,7 @@ import json
 import repository
 import locker
 import time
+import datetime
 
 # Variaveis de conexão
 Host = 'localhost'
@@ -19,6 +20,23 @@ socket_servidor.listen()
 fila = []
 clientes_conectados = []
 logs = []
+cliente_em_execução = None
+
+def thread_verificar_timeout(socket_edge, hora_inicio_execucao, numero_cliente):
+    global cliente_em_execução
+    global lista_log
+    
+    while True:
+        if cliente_em_execução == numero_cliente:
+            if datetime.datetime.now() - hora_inicio_execucao > datetime.timedelta(seconds=20):
+                hora_atual = datetime.datetime.now()
+                hora_formatada = hora_atual.strftime('%H:%M:%S.%f')
+                lista_log.append(f'{hora_formatada} TimeOut em: {numero_cliente}')
+                cliente_em_execução = None
+                socket_edge.close()
+                break
+        if cliente_em_execução != numero_cliente:
+            break
 
 def realizar_autenticacao(mensagem, socket_edge, db):
     global logs
@@ -42,11 +60,16 @@ def realizar_autenticacao(mensagem, socket_edge, db):
 def realizar_request(mensagem, socket_edge, db):
     global logs
     global clientes_conectados
+    global cliente_em_execução
+    
     #recebe request
     print(mensagem)
     logs.append(mensagem)
     protocolo = mensagem
     usuario = protocolo['mensagem'].split('|')[0]
+    cliente_em_execução = usuario
+    hora_atual = hora_inicio_execucao = datetime.datetime.now()
+    threading.Thread(target=thread_verificar_timeout, args=(socket_edge, hora_inicio_execucao, usuario)).start()
     
     time.sleep(2)
 
@@ -90,6 +113,7 @@ def realizar_request(mensagem, socket_edge, db):
     elemento = next((x for x in clientes_conectados if x["cliente"] == usuario), None)
     if elemento:
         elemento["quantidade_de_atendimentos"] += 1
+    cliente_em_execução = None
     
 def realizar_deposito(conta_origem, conta_destino, valor, db):
     global logs

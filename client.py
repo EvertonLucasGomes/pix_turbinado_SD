@@ -15,7 +15,7 @@ dnsProtocol = {"tipo": "1", "dominio": "bancoBemAmigos.com.br"}
 #Seção do usuario
 protocolo_de_envio = {"autenticado": 0,"funcao": 0 ,"mensagem": ""}
 
-
+locker = threading.Lock()
 
 contas = []
 
@@ -35,6 +35,7 @@ def thread_realizar_pix():
     db = repository.Db("bank_database.db")
     global contas
     for i in range(5):
+        locker.acquire()
         socket_balancer = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         socket_balancer.connect((host_load_balancer, int(port_load_balancer)))
     
@@ -73,6 +74,7 @@ def thread_realizar_pix():
         socket_balancer.sendall(json.dumps(protocolo_de_envio).encode())
         
         socket_balancer.close()
+        locker.release()
         
 def thread_interface():
     while True:
@@ -81,11 +83,13 @@ def thread_interface():
         print("2 - ver extrato")
         input_usuario = input("Digite a opção desejada: ")
         
+        locker.acquire()
         if input_usuario == "1":
             db = repository.Db("bank_database.db")
             print("Saldo: ", db.retornar_saldo(login))
         elif input_usuario == "2":
             print("Extrato: ", db.extrato_conta(login) )
+        locker.release()
 
 if len(mensagem_dns) == 2:
     db = repository.Db("bank_database.db")
