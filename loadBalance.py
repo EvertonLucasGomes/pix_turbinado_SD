@@ -65,7 +65,6 @@ def threaded_direcionar_cliente(socket_cliente, sever):
             elif mensagem["funcao"] == 1:
                 processo_request(mensagem, socket_edge_computing, socket_cliente)
                 
-    
 var = 0
 
 if __name__ == "__main__":
