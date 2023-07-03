@@ -18,8 +18,10 @@ socket_servidor.listen()
 
 fila = []
 clientes_conectados = []
+logs = []
 
 def realizar_autenticacao(mensagem, socket_edge, db):
+    global logs
     login = mensagem['mensagem'].split('|')[0]
     senha = mensagem['mensagem'].split('|')[1].lstrip('0')
     
@@ -32,14 +34,17 @@ def realizar_autenticacao(mensagem, socket_edge, db):
         mensagem['mensagem'] =  f"{login}|0000000000"
         clientes_conectados.append(protocolo)
     
-    print(len(json.dumps(mensagem).encode()))    
+    print(len(json.dumps(mensagem).encode()))   
+    logs.append(mensagem)
     #retornando a mensagem para o cliente
     socket_edge.sendall(json.dumps(mensagem).encode())
 
 def realizar_request(mensagem, socket_edge, db):
+    global logs
     global clientes_conectados
     #recebe request
     print(mensagem)
+    logs.append(mensagem)
     protocolo = mensagem
     usuario = protocolo['mensagem'].split('|')[0]
     
@@ -50,12 +55,14 @@ def realizar_request(mensagem, socket_edge, db):
     protocolo["funcao"] = 2
     protocolo["mensagem"] = mensagem_grant
     socket_edge.sendall(json.dumps(protocolo).encode())
+    logs.append(protocolo)
     
     #recebe operation
     resposta_operation = socket_edge.recv(62).decode()
     protocolo = json.loads(resposta_operation)
     print("RECEBENDO OPERATION " )
     print(protocolo)
+    logs.append(protocolo)
     
     #realiza operation
     mensagem_operation = protocolo['mensagem']
@@ -76,6 +83,7 @@ def realizar_request(mensagem, socket_edge, db):
     resposta_release = json.loads(resposta_release)
     print("RESPOSTA DO RELEASE ")
     print(resposta_release)
+    logs.append(resposta_release)
     
     fila.remove("Cliente " + usuario)
     
@@ -84,11 +92,14 @@ def realizar_request(mensagem, socket_edge, db):
         elemento["quantidade_de_atendimentos"] += 1
     
 def realizar_deposito(conta_origem, conta_destino, valor, db):
+    global logs
     db = repository.Db("bank_database.db")
     if(db.executar_operacao_saque_transferencia(conta_origem, conta_destino, valor)):
         db.adicionar_trasancao_extrato(conta_origem, conta_destino, valor)
+        logs.append(f"[INFO] Operação realizada com sucesso - {conta_origem} - {conta_destino} - {valor}")
         print("Operação realizada com sucesso")
     else:
+        logs.append(f"[ERROR] Não foi possível realizar a operação, saldo insuficiente - {conta_origem} - {conta_destino} - {valor}")
         print("Não foi possível realizar a operação, saldo insuficiente")
 
 def threaded_recebimento_do_edge(socket_edge):
@@ -125,7 +136,7 @@ def thread_interface():
         
         locker.acquire()
         if input_usuario == "1":
-            pass
+            print("Todas as operações:",logs)
         elif input_usuario == "2":
             print(clientes_conectados)
         elif input_usuario == "3":
