@@ -11,8 +11,6 @@ Port = 59000
 
 locker = threading.Lock()
 
-protocolo = {"cliente": 0, "quantidade_de_atendimentos": 0, "pid": 0}
-
 # Criação e configuração do socket
 socket_servidor = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 socket_servidor.bind((Host, Port))
@@ -21,27 +19,25 @@ socket_servidor.listen()
 fila = []
 clientes_conectados = []
 
-pid = 0
-
 def realizar_autenticacao(mensagem, socket_edge, db):
     login = mensagem['mensagem'].split('|')[0]
     senha = mensagem['mensagem'].split('|')[1].lstrip('0')
     
-    protocolo["cliente"] = login
-    protocolo["pid"] = pid
-    pid += 1
+    protocolo = {"cliente": 0, "quantidade_de_atendimentos": 0}
     
-    clientes_conectados.append(protocolo)
+    protocolo["cliente"] = login
     
     if db.autenticar_usuario(login, senha):
         mensagem['autenticado'] = 1
         mensagem['mensagem'] =  f"{login}|0000000000"
+        clientes_conectados.append(protocolo)
     
     print(len(json.dumps(mensagem).encode()))    
     #retornando a mensagem para o cliente
     socket_edge.sendall(json.dumps(mensagem).encode())
 
 def realizar_request(mensagem, socket_edge, db):
+    global clientes_conectados
     #recebe request
     print(mensagem)
     protocolo = mensagem
@@ -66,7 +62,8 @@ def realizar_request(mensagem, socket_edge, db):
     mensagem_operation = mensagem_operation.split('|')
     conta_origem = mensagem_operation[0]
     conta_destino = mensagem_operation[1]
-    realizar_deposito(conta_origem, conta_destino, db)
+    valor = mensagem_operation[2]
+    realizar_deposito(conta_origem, conta_destino, valor ,db)
     
     #envia respota
     resposta_operation = f"{usuario.zfill(4)}|0000000000"
@@ -79,9 +76,14 @@ def realizar_request(mensagem, socket_edge, db):
     resposta_release = json.loads(resposta_release)
     print("RESPOSTA DO RELEASE ")
     print(resposta_release)
+    
     fila.remove("Cliente " + usuario)
     
-def realizar_deposito(conta_origem, conta_destino, db):
+    elemento = next((x for x in clientes_conectados if x["cliente"] == usuario), None)
+    if elemento:
+        elemento["quantidade_de_atendimentos"] += 1
+    
+def realizar_deposito(conta_origem, conta_destino, valor, db):
     pass
 
 def threaded_recebimento_do_edge(socket_edge):
@@ -106,6 +108,8 @@ def threaded_recebimento_do_edge(socket_edge):
     socket_edge.close()
 
 def thread_interface():
+    global clientes_conectados
+    global fila
     while True:
         print("Bem vindo ao Banco Bem Amigos")
         print("1 - Listar Operações dos usuarios")
@@ -118,12 +122,17 @@ def thread_interface():
         if input_usuario == "1":
             pass
         elif input_usuario == "2":
-            pass
+            print(clientes_conectados)
         elif input_usuario == "3":
-            pass
+            print(fila)
         elif input_usuario == "4":
-            pass
+            print("Encerrando execução")
+            socket_servidor.close()
+            break
         locker.release()
+
+interface = threading.Thread(target=thread_interface)
+interface.start()
 
 if __name__ == "__main__":
     print('Servidor iniciado.')

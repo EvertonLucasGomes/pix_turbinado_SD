@@ -31,6 +31,7 @@ mensagem_dns = json.loads(socket_dns.recv(1024).decode())
 socket_dns.close()
 
 def thread_realizar_pix():
+    global contas
     for i in range(5):
         socket_balancer = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         socket_balancer.connect((host_load_balancer, int(port_load_balancer)))
@@ -45,11 +46,19 @@ def thread_realizar_pix():
         resposta_grant = json.loads(resposta_grant)
         print("GRANT RECEBIDO ")
         print(resposta_grant)
+        
+        #Logica para escolher a conta de destino da lista de contas
+        conta = 0
+        
+        #Logica para escolher o valor do pix de forma aleatoria
+        valor_para_pix = 0
+        
         #envia deposito
-        mensagem_operation = f"{login.zfill(4)}|0000|00000"
+        mensagem_operation = f"{login.zfill(4)}|{conta.zfill(4)}|{valor_para_pix.zfill(5)}"
         protocolo_de_envio["funcao"] = 3
         protocolo_de_envio["mensagem"] = mensagem_operation
         socket_balancer.sendall(json.dumps(protocolo_de_envio).encode())
+        
         #recebe resposta
         resposta_operation = socket_balancer.recv(62).decode()
         resposta_operation = json.loads(resposta_operation)
@@ -111,14 +120,6 @@ if len(mensagem_dns) == 2:
         interface = threading.Thread(target=thread_interface)
         interface.start()
         
-
-        
-    # time.sleep(2)
-    
-    # mensagem = "teste2"
-    # socket_balancer.sendall(mensagem.encode())
-    
-    # socket_balancer.close()
     
 else:
     print(mensagem_dns)
