@@ -84,7 +84,12 @@ def realizar_request(mensagem, socket_edge, db):
         elemento["quantidade_de_atendimentos"] += 1
     
 def realizar_deposito(conta_origem, conta_destino, valor, db):
-    pass
+    db = repository.Db("bank_database.db")
+    if(db.executar_operacao_saque_transferencia(conta_origem, conta_destino, valor)):
+        db.adicionar_trasancao_extrato(conta_origem, conta_destino, valor)
+        print("Operação realizada com sucesso")
+    else:
+        print("Não foi possível realizar a operação, saldo insuficiente")
 
 def threaded_recebimento_do_edge(socket_edge):
     #instanciando o repositório

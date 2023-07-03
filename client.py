@@ -3,6 +3,7 @@ import threading
 import json
 import time
 import repository
+import random
 
 # Variaveis de conexão do servidor DNS
 HostDNS = 'localhost'
@@ -14,7 +15,7 @@ dnsProtocol = {"tipo": "1", "dominio": "bancoBemAmigos.com.br"}
 #Seção do usuario
 protocolo_de_envio = {"autenticado": 0,"funcao": 0 ,"mensagem": ""}
 
-db = repository.Db("bank_database.db")
+
 
 contas = []
 
@@ -31,6 +32,7 @@ mensagem_dns = json.loads(socket_dns.recv(1024).decode())
 socket_dns.close()
 
 def thread_realizar_pix():
+    db = repository.Db("bank_database.db")
     global contas
     for i in range(5):
         socket_balancer = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -48,10 +50,10 @@ def thread_realizar_pix():
         print(resposta_grant)
         
         #Logica para escolher a conta de destino da lista de contas
-        conta = 0
+        conta = db.retornar_conta_aleatoria_removendo_conta_origem(login)
         
         #Logica para escolher o valor do pix de forma aleatoria
-        valor_para_pix = 0
+        valor_para_pix = str(random.randint(0, 500))
         
         #envia deposito
         mensagem_operation = f"{login.zfill(4)}|{conta.zfill(4)}|{valor_para_pix.zfill(5)}"
@@ -80,11 +82,13 @@ def thread_interface():
         input_usuario = input("Digite a opção desejada: ")
         
         if input_usuario == "1":
-            pass
+            db = repository.Db("bank_database.db")
+            print("Saldo: ", db.retornar_saldo(login))
         elif input_usuario == "2":
-            pass
+            print("Extrato: ", db.extrato_conta(login) )
 
 if len(mensagem_dns) == 2:
+    db = repository.Db("bank_database.db")
     host_load_balancer, port_load_balancer = mensagem_dns
     print(host_load_balancer, port_load_balancer)
     
